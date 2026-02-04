@@ -40,6 +40,9 @@ function mapDbAgent(row: any): Agent {
       security_hygiene: Number(row.security_hygiene) || 0.5,
       overall_score: (Number(row.calibration) + Number(row.reliability) + Number(row.constructiveness) + Number(row.security_hygiene)) / 4 || 0.5,
     },
+    is_verified: row.is_verified || false,
+    verified_at: row.verified_at,
+    human_email: row.human_email,
     created_at: row.created_at,
   };
 }

@@ -1,14 +1,16 @@
 import { Agent } from '@/types/coherence';
 import { cn } from '@/lib/utils';
 import { Bot } from 'lucide-react';
+import { VerifiedBadge } from './VerifiedBadge';
 
 interface AgentAvatarProps {
   agent: Agent;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   showReputation?: boolean;
+  showVerified?: boolean;
 }
 
-export function AgentAvatar({ agent, size = 'md', showReputation = false }: AgentAvatarProps) {
+export function AgentAvatar({ agent, size = 'md', showReputation = false, showVerified = true }: AgentAvatarProps) {
   const sizeClasses = {
     xs: 'h-6 w-6',
     sm: 'h-8 w-8',
@@ -21,6 +23,13 @@ export function AgentAvatar({ agent, size = 'md', showReputation = false }: Agen
     sm: 'h-4 w-4',
     md: 'h-5 w-5',
     lg: 'h-7 w-7',
+  };
+
+  const badgeSizes: Record<string, 'sm' | 'md' | 'lg'> = {
+    xs: 'sm',
+    sm: 'sm',
+    md: 'md',
+    lg: 'lg',
   };
 
   // Generate a deterministic color based on agent_id
@@ -55,7 +64,13 @@ export function AgentAvatar({ agent, size = 'md', showReputation = false }: Agen
         )}
       </div>
       
-      {showReputation && (
+      {showVerified && agent.is_verified && (
+        <div className="absolute -bottom-0.5 -right-0.5">
+          <VerifiedBadge size={badgeSizes[size]} />
+        </div>
+      )}
+      
+      {showReputation && !agent.is_verified && (
         <div 
           className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-background"
           style={{ 

@@ -15,7 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { TrendingUp, Shield, Layers, Target, Network, Activity, Settings, Bot } from 'lucide-react';
+import { TrendingUp, Shield, Layers, Target, Network, Activity, Settings, Bot, BadgeCheck } from 'lucide-react';
+import { VerifiedBadge } from '@/components/coherence/VerifiedBadge';
 
 interface DBAgent {
   id: string;
@@ -34,6 +35,9 @@ interface DBAgent {
   alephnet_pubkey: string | null;
   alephnet_stake_tier: string | null;
   alephnet_node_url: string | null;
+  is_verified: boolean | null;
+  verified_at: string | null;
+  human_email: string | null;
   created_at: string;
 }
 
@@ -165,12 +169,20 @@ function AgentCard({ agent, onManage, onUpdate }: AgentCardProps) {
           />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-lg">{agent.display_name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-lg">{agent.display_name}</h3>
+            {agent.is_verified && <VerifiedBadge size="md" />}
+          </div>
           <p className="text-xs text-muted-foreground font-mono truncate">
             {agent.id.slice(0, 8)}...
           </p>
           <div className="flex items-center gap-2 mt-2">
-            {agent.alephnet_pubkey ? (
+            {agent.is_verified ? (
+              <>
+                <BadgeCheck className="h-3 w-3 text-coherence" />
+                <span className="text-xs text-coherence font-medium">Verified</span>
+              </>
+            ) : agent.alephnet_pubkey ? (
               <>
                 <div className="h-2 w-2 rounded-full bg-coherence animate-pulse" />
                 <span className="text-xs text-coherence font-mono">MESH CONNECTED</span>
@@ -178,7 +190,7 @@ function AgentCard({ agent, onManage, onUpdate }: AgentCardProps) {
             ) : (
               <>
                 <div className="h-2 w-2 rounded-full bg-muted-foreground" />
-                <span className="text-xs text-muted-foreground font-mono">LOCAL</span>
+                <span className="text-xs text-muted-foreground font-mono">UNVERIFIED</span>
               </>
             )}
           </div>
