@@ -126,6 +126,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "alephnet_events_source_agent_id_fkey"
+            columns: ["source_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "alephnet_events_target_claim_id_fkey"
             columns: ["target_claim_id"]
             isOneToOne: false
@@ -172,6 +179,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attestations_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
             referencedColumns: ["id"]
           },
           {
@@ -237,6 +251,13 @@ export type Database = {
             referencedRelation: "agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "claims_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       edges: {
@@ -276,6 +297,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edges_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
             referencedColumns: ["id"]
           },
           {
@@ -349,6 +377,13 @@ export type Database = {
             referencedRelation: "agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "evidence_uploader_id_fkey"
+            columns: ["uploader_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       rate_limits: {
@@ -382,6 +417,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rate_limits_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
             referencedColumns: ["id"]
           },
         ]
@@ -450,6 +492,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "room_participants_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "room_participants_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
@@ -498,6 +547,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
             referencedColumns: ["id"]
           },
           {
@@ -558,6 +614,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "syntheses_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
             referencedColumns: ["id"]
           },
           {
@@ -642,10 +705,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tasks_assigned_agent_id_fkey"
+            columns: ["assigned_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tasks_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
             referencedColumns: ["id"]
           },
           {
@@ -673,7 +750,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      agents_public: {
+        Row: {
+          alephnet_node_url: string | null
+          alephnet_pubkey: string | null
+          alephnet_stake_tier: string | null
+          calibration: number | null
+          capabilities: Json | null
+          constructiveness: number | null
+          created_at: string | null
+          display_name: string | null
+          domains: string[] | null
+          id: string | null
+          is_verified: boolean | null
+          pubkey: string | null
+          reliability: number | null
+          security_hygiene: number | null
+          updated_at: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          alephnet_node_url?: string | null
+          alephnet_pubkey?: string | null
+          alephnet_stake_tier?: string | null
+          calibration?: number | null
+          capabilities?: Json | null
+          constructiveness?: number | null
+          created_at?: string | null
+          display_name?: string | null
+          domains?: string[] | null
+          id?: string | null
+          is_verified?: boolean | null
+          pubkey?: string | null
+          reliability?: number | null
+          security_hygiene?: number | null
+          updated_at?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          alephnet_node_url?: string | null
+          alephnet_pubkey?: string | null
+          alephnet_stake_tier?: string | null
+          calibration?: number | null
+          capabilities?: Json | null
+          constructiveness?: number | null
+          created_at?: string | null
+          display_name?: string | null
+          domains?: string[] | null
+          id?: string | null
+          is_verified?: boolean | null
+          pubkey?: string | null
+          reliability?: number | null
+          security_hygiene?: number | null
+          updated_at?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_rate_limit: {
@@ -690,6 +823,27 @@ export type Database = {
         }[]
       }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      get_agent_public: {
+        Args: { agent_id_param: string }
+        Returns: {
+          alephnet_node_url: string
+          alephnet_pubkey: string
+          alephnet_stake_tier: string
+          calibration: number
+          capabilities: Json
+          constructiveness: number
+          created_at: string
+          display_name: string
+          domains: string[]
+          id: string
+          is_verified: boolean
+          pubkey: string
+          reliability: number
+          security_hygiene: number
+          updated_at: string
+          verified_at: string
+        }[]
+      }
       get_current_agent_id: { Args: never; Returns: string }
       is_agent_owner: { Args: { agent_id_param: string }; Returns: boolean }
       is_claim_owner: { Args: { claim_id_param: string }; Returns: boolean }
