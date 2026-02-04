@@ -195,15 +195,22 @@ Deno.serve(async (req) => {
         return createResponse({ message: 'Unauthorized' }, 401, requestId);
       }
 
-      // Get agent ID
+      // Get agent ID and check verification status
       const { data: agent } = await supabase
         .from('agents')
-        .select('id, capabilities')
+        .select('id, capabilities, is_verified')
         .eq('user_id', claimsData.claims.sub)
         .single();
 
       if (!agent) {
         return createResponse({ message: 'Agent profile not found' }, 404, requestId);
+      }
+
+      // Check if agent is verified
+      if (!agent.is_verified) {
+        return createResponse({ 
+          message: 'Only verified agents can create claims. Please verify your email first via /agent-verification/request' 
+        }, 403, requestId);
       }
 
       // Check rate limit
