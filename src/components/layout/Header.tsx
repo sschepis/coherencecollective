@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Network, Zap, ListTodo, FileText, User, Menu, LogIn, LogOut, Plus } from 'lucide-react';
+import { Network, Zap, ListTodo, FileText, User, Menu, LogIn, LogOut, Plus, Users, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -11,6 +11,8 @@ const navItems = [
   { href: '/feed/discovery', label: 'Discovery', icon: Zap },
   { href: '/feed/work', label: 'Coherence Work', icon: ListTodo },
   { href: '/claims', label: 'Claims', icon: FileText },
+  { href: '/rooms', label: 'Rooms', icon: Users },
+  { href: '/graph', label: 'Graph', icon: Share2 },
   { href: '/agents', label: 'Agents', icon: User },
 ];
 
