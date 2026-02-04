@@ -11,7 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { AgentAvatar } from '@/components/coherence/AgentAvatar';
+import { SynthesisForm } from '@/components/coherence/SynthesisForm';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -23,10 +25,11 @@ import {
   Scale,
   CheckCircle2,
   Layers,
-  FileText
+  FileText,
+  Edit
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { RoomParticipant, Room } from '@/types/coherence';
+import type { RoomParticipant } from '@/types/coherence';
 
 const roleConfig: Record<RoomParticipant['role'], { icon: React.ElementType; color: string; description: string }> = {
   proposer: { icon: FileText, color: 'text-primary', description: 'Proposes new claims and arguments' },
@@ -43,6 +46,7 @@ export default function RoomDetail() {
   const [selectedRole, setSelectedRole] = useState<RoomParticipant['role']>('challenger');
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [addClaimDialogOpen, setAddClaimDialogOpen] = useState(false);
+  const [synthesisDialogOpen, setSynthesisDialogOpen] = useState(false);
   const [selectedClaimId, setSelectedClaimId] = useState('');
 
   const { data: room, isLoading, refetch } = useQuery({
@@ -73,6 +77,9 @@ export default function RoomDetail() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'room_claims', filter: `room_id=eq.${id}` }, () => {
         refetch();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'syntheses', filter: `room_id=eq.${id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ['synthesis', id] });
       })
       .subscribe();
 
@@ -132,6 +139,12 @@ export default function RoomDetail() {
 
   const availableClaims = allClaims?.filter(c => !room.claim_ids.includes(c.claim_id)) || [];
   const roomClaims = allClaims?.filter(c => room.claim_ids.includes(c.claim_id)) || [];
+
+  // Check if current user is a synthesizer in the room
+  const currentAgentId = room.participants.find(p => p.agent?.agent_id)?.agent_id;
+  const isSynthesizer = room.participants.some(
+    p => p.role === 'synthesizer' && user
+  );
 
   return (
     <MainLayout>
@@ -239,28 +252,115 @@ export default function RoomDetail() {
               </CardContent>
             </Card>
 
-            {/* Synthesis */}
-            {synthesis && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Layers className="h-5 w-5 text-coherence" />
-                    Current Synthesis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <h3 className="font-semibold text-lg mb-2">{synthesis.title}</h3>
-                  <p className="text-muted-foreground">{synthesis.summary}</p>
-                  
-                  <div className="mt-4 p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Confidence</span>
-                      <span className="font-mono text-primary">{(synthesis.confidence * 100).toFixed(0)}%</span>
+            {/* Synthesis Section */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-coherence" />
+                  Synthesis
+                </CardTitle>
+                
+                {user && isSynthesizer && (
+                  <Dialog open={synthesisDialogOpen} onOpenChange={setSynthesisDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="gap-1">
+                        {synthesis ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                        {synthesis ? 'New Synthesis' : 'Create Synthesis'}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[90vh]">
+                      <DialogHeader>
+                        <DialogTitle>Create Synthesis Document</DialogTitle>
+                      </DialogHeader>
+                      <ScrollArea className="max-h-[70vh] pr-4">
+                        <SynthesisForm
+                          roomId={id!}
+                          roomClaims={roomClaims}
+                          onSuccess={() => setSynthesisDialogOpen(false)}
+                          onCancel={() => setSynthesisDialogOpen(false)}
+                        />
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </CardHeader>
+              <CardContent>
+                {synthesis ? (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-lg">{synthesis.title}</h3>
+                        <Badge variant={synthesis.status === 'published' ? 'default' : 'secondary'}>
+                          {synthesis.status}
+                        </Badge>
+                      </div>
+                      <p className="text-muted-foreground">{synthesis.summary}</p>
+                    </div>
+                    
+                    {/* Accepted Claims Count */}
+                    {synthesis.accepted_claim_ids.length > 0 && (
+                      <div className="p-3 rounded-lg bg-verified/10 border border-verified/20">
+                        <div className="flex items-center gap-2 text-sm text-verified">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>{synthesis.accepted_claim_ids.length} accepted claims</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Open Questions */}
+                    {synthesis.open_questions.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Open Questions:</p>
+                        <ul className="text-sm text-muted-foreground space-y-1">
+                          {synthesis.open_questions.map((q, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-primary">•</span>
+                              {q.text}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Limits */}
+                    {synthesis.limits.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Known Limitations:</p>
+                        <ul className="text-sm text-muted-foreground space-y-1">
+                          {synthesis.limits.map((l, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-destructive">⚠</span>
+                              {l}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    <div className="p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Confidence</span>
+                        <span className="font-mono text-primary">{(synthesis.confidence * 100).toFixed(0)}%</span>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <div className="text-center py-8">
+                    <Layers className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground mb-2">No synthesis created yet</p>
+                    {isSynthesizer ? (
+                      <p className="text-sm text-muted-foreground">
+                        As a synthesizer, you can create a synthesis document to compile the findings.
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        A synthesizer needs to create the synthesis document.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar */}
