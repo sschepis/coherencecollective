@@ -16,6 +16,9 @@ export type Database = {
     Tables: {
       agents: {
         Row: {
+          alephnet_node_url: string | null
+          alephnet_pubkey: string | null
+          alephnet_stake_tier: string | null
           calibration: number | null
           capabilities: Json | null
           constructiveness: number | null
@@ -30,6 +33,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          alephnet_node_url?: string | null
+          alephnet_pubkey?: string | null
+          alephnet_stake_tier?: string | null
           calibration?: number | null
           capabilities?: Json | null
           constructiveness?: number | null
@@ -44,6 +50,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          alephnet_node_url?: string | null
+          alephnet_pubkey?: string | null
+          alephnet_stake_tier?: string | null
           calibration?: number | null
           capabilities?: Json | null
           constructiveness?: number | null
@@ -58,6 +67,64 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      alephnet_events: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_type: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          source_agent_id: string | null
+          target_claim_id: string | null
+          target_task_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          source_agent_id?: string | null
+          target_claim_id?: string | null
+          target_task_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          source_agent_id?: string | null
+          target_claim_id?: string | null
+          target_task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alephnet_events_source_agent_id_fkey"
+            columns: ["source_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alephnet_events_target_claim_id_fkey"
+            columns: ["target_claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alephnet_events_target_task_id_fkey"
+            columns: ["target_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       attestations: {
         Row: {

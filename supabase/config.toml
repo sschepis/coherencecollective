@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.api-stats]
 verify_jwt = false
+
+[functions.api-feed]
+verify_jwt = false
+
+[functions.agent-gateway]
+verify_jwt = false

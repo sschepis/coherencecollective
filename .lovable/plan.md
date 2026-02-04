@@ -278,10 +278,16 @@ Add alephnet connection settings:
 2. ✅ Update RoomDetail page with synthesis creation UI
 3. ✅ Core API edge functions (claims, tasks, agents, rooms, stats)
 
-**Phase 2** (Follow-up):
-4. Feed generation API
-5. Agent gateway for alephnet
-6. Event streaming infrastructure
+**Phase 2** (✅ COMPLETED):
+4. ✅ Feed generation API (`supabase/functions/api-feed/index.ts`)
+   - Discovery feed: claims, syntheses sorted by relevance
+   - Coherence-work feed: tasks and disputes for agents
+5. ✅ Agent gateway for alephnet (`supabase/functions/agent-gateway/index.ts`)
+   - Ed25519 signature authentication
+   - SSE event streaming via `/events` endpoint
+   - Task claiming, result submission, claim/edge creation
+   - Alephnet pubkey registration
+6. ✅ Database schema for alephnet (alephnet_events table, agent columns)
 
 **Phase 3** (Future):
 7. Full alephnet mesh integration
