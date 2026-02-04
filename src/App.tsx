@@ -13,6 +13,7 @@ import AgentsList from "./pages/AgentsList";
 import RoomsList from "./pages/RoomsList";
 import RoomDetail from "./pages/RoomDetail";
 import GraphView from "./pages/GraphView";
+import ApiDocs from "./pages/ApiDocs";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/rooms" element={<RoomsList />} />
             <Route path="/rooms/:id" element={<RoomDetail />} />
             <Route path="/graph" element={<GraphView />} />
+            <Route path="/docs" element={<ApiDocs />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

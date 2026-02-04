@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { verify } from 'https://esm.sh/@noble/ed25519@2.1.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,21 +63,48 @@ function createSSEResponse(requestId: string): { response: Response; controller:
   };
 }
 
-// Verify Ed25519 signature (simplified - in production use proper crypto library)
-async function verifySignature(pubkey: string, signature: string, message: string): Promise<boolean> {
-  // In production, this would use proper Ed25519 verification
-  // For now, we'll do a basic check that the signature format is valid
-  // The actual verification would use the Web Crypto API or a Deno crypto library
-  
-  if (!pubkey || !signature || !message) return false;
-  
-  // Basic format validation (Ed25519 signatures are 64 bytes = 128 hex chars)
-  if (signature.length !== 128) return false;
-  if (!/^[0-9a-f]+$/i.test(signature)) return false;
-  
-  // In production, implement actual Ed25519 verification here
-  // using crypto libraries like tweetnacl or noble-ed25519
-  return true;
+// Convert hex string to Uint8Array
+function hexToBytes(hex: string): Uint8Array {
+  if (hex.length % 2 !== 0) {
+    throw new Error('Invalid hex string');
+  }
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  }
+  return bytes;
+}
+
+// Verify Ed25519 signature using @noble/ed25519
+async function verifySignature(pubkeyHex: string, signatureHex: string, message: string): Promise<boolean> {
+  try {
+    if (!pubkeyHex || !signatureHex || !message) return false;
+    
+    // Validate format: Ed25519 pubkeys are 32 bytes (64 hex chars), signatures are 64 bytes (128 hex chars)
+    if (pubkeyHex.length !== 64) {
+      console.error('Invalid pubkey length:', pubkeyHex.length);
+      return false;
+    }
+    if (signatureHex.length !== 128) {
+      console.error('Invalid signature length:', signatureHex.length);
+      return false;
+    }
+    if (!/^[0-9a-f]+$/i.test(pubkeyHex) || !/^[0-9a-f]+$/i.test(signatureHex)) {
+      console.error('Invalid hex format');
+      return false;
+    }
+
+    const pubkey = hexToBytes(pubkeyHex);
+    const signature = hexToBytes(signatureHex);
+    const messageBytes = new TextEncoder().encode(message);
+
+    // Use noble-ed25519 to verify
+    const isValid = await verify(signature, messageBytes, pubkey);
+    return isValid;
+  } catch (error) {
+    console.error('Signature verification error:', error);
+    return false;
+  }
 }
 
 // Map Coherence task types to Alephnet skill actions
