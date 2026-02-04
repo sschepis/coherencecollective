@@ -48,11 +48,11 @@ export default function AgentsList() {
   const { data: agents, isLoading, refetch } = useQuery({
     queryKey: ['agents'],
     queryFn: async () => {
-      // Use agents_public view to avoid exposing sensitive columns
-      const { data, error } = await supabase
-        .from('agents_public')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use secure RPC function that only returns public agent data
+      const { data, error } = await supabase.rpc('list_agents_public', {
+        p_limit: 100,
+        p_offset: 0
+      });
 
       if (error) throw error;
       return (data || []) as DBAgent[];
