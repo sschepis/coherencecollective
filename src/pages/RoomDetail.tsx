@@ -15,7 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AgentAvatar } from '@/components/coherence/AgentAvatar';
 import { SynthesisForm } from '@/components/coherence/SynthesisForm';
 import { toast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+
 import { 
   ArrowLeft, 
   Users, 
@@ -41,7 +41,7 @@ const roleConfig: Record<RoomParticipant['role'], { icon: React.ElementType; col
 
 export default function RoomDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
+  
   const queryClient = useQueryClient();
   const [selectedRole, setSelectedRole] = useState<RoomParticipant['role']>('challenger');
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
@@ -140,11 +140,8 @@ export default function RoomDetail() {
   const availableClaims = allClaims?.filter(c => !room.claim_ids.includes(c.claim_id)) || [];
   const roomClaims = allClaims?.filter(c => room.claim_ids.includes(c.claim_id)) || [];
 
-  // Check if current user is a synthesizer in the room
-  const currentAgentId = room.participants.find(p => p.agent?.agent_id)?.agent_id;
-  const isSynthesizer = room.participants.some(
-    p => p.role === 'synthesizer' && user
-  );
+  // Check if any synthesizers exist in the room
+  const isSynthesizer = room.participants.some(p => p.role === 'synthesizer');
 
   return (
     <MainLayout>
@@ -188,7 +185,7 @@ export default function RoomDetail() {
                   Claims Under Discussion ({roomClaims.length})
                 </CardTitle>
                 
-                {user && (
+                {true && (
                   <Dialog open={addClaimDialogOpen} onOpenChange={setAddClaimDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="gap-1">
@@ -260,7 +257,7 @@ export default function RoomDetail() {
                   Synthesis
                 </CardTitle>
                 
-                {user && isSynthesizer && (
+                {isSynthesizer && (
                   <Dialog open={synthesisDialogOpen} onOpenChange={setSynthesisDialogOpen}>
                     <DialogTrigger asChild>
                       <Button size="sm" className="gap-1">
@@ -373,7 +370,7 @@ export default function RoomDetail() {
                   Participants ({room.participants.length})
                 </CardTitle>
                 
-                {user && (
+                {true && (
                   <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
                     <DialogTrigger asChild>
                       <Button size="sm" className="gap-1">

@@ -10,7 +10,7 @@ import {
   Shield,
   FileText,
   MessageSquare,
-  Loader2
+  
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import { EdgeForm } from '@/components/coherence/EdgeForm';
 import { fetchClaimById } from '@/lib/api';
 import { fetchEdgesForClaim } from '@/lib/api/edges';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
+
 
 const statusConfig = {
   verified: { icon: CheckCircle2, color: 'text-verified bg-verified/10 border-verified/30' },
@@ -33,7 +33,7 @@ const statusConfig = {
 
 export default function ClaimDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
+  
 
   const { data: claim, isLoading: claimLoading } = useQuery({
     queryKey: ['claim', id],
@@ -241,13 +241,11 @@ export default function ClaimDetail() {
           <div className="space-y-6">
             {/* Actions */}
             <div className="p-4 rounded-xl bg-card border border-border space-y-3">
-              {user && (
-                <EdgeForm 
-                  fromClaimId={claim.claim_id} 
-                  fromClaimTitle={claim.title}
-                  onSuccess={() => refetchEdges()}
-                />
-              )}
+              <EdgeForm 
+                fromClaimId={claim.claim_id} 
+                fromClaimTitle={claim.title}
+                onSuccess={() => refetchEdges()}
+              />
               <Button className="w-full gap-2">
                 <CheckCircle2 className="h-4 w-4" />
                 Verify Claim

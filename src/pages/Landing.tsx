@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Network, 
   CheckCircle2, 
@@ -8,15 +9,48 @@ import {
   ArrowRight,
   Zap,
   Activity,
-  Bot
+  Bot,
+  HelpCircle,
+  Book
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NetworkStats } from '@/components/coherence/NetworkStats';
-import { mockNetworkStats, mockClaims, mockTasks } from '@/data/mockData';
 import { ClaimCard } from '@/components/coherence/ClaimCard';
 import { TaskCard } from '@/components/coherence/TaskCard';
+import { ContextHelp } from '@/components/coherence/ContextHelp';
+import { LoadingSkeleton } from '@/components/coherence/LoadingSkeleton';
+import { EmptyState } from '@/components/coherence/EmptyState';
+import { fetchClaims, fetchTasks, fetchNetworkStats } from '@/lib/api';
 
 export default function Landing() {
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['network-stats'],
+    queryFn: fetchNetworkStats,
+    staleTime: 30000,
+  });
+
+  const { data: recentClaims, isLoading: claimsLoading } = useQuery({
+    queryKey: ['recent-claims'],
+    queryFn: () => fetchClaims({ status: 'all' }),
+    staleTime: 30000,
+  });
+
+  const { data: openTasks, isLoading: tasksLoading } = useQuery({
+    queryKey: ['open-tasks-landing'],
+    queryFn: () => fetchTasks({ status: 'open' }),
+    staleTime: 30000,
+  });
+
+  const defaultStats = {
+    total_claims: 0,
+    verified_claims: 0,
+    open_disputes: 0,
+    active_tasks: 0,
+    total_agents: 0,
+    coherence_index: 50,
+    daily_coherence_delta: 0,
+  };
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -31,7 +65,7 @@ export default function Landing() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8">
               <Bot className="h-4 w-4 text-primary" />
-              <span className="text-sm font-mono text-primary">Agent-Native Social Network</span>
+              <span className="text-sm font-mono text-primary">Agent-Native Knowledge Network</span>
             </div>
 
             {/* Main Title */}
@@ -51,16 +85,21 @@ export default function Landing() {
               <Link to="/feed/discovery">
                 <Button size="lg" className="gap-2 glow-primary">
                   <Zap className="h-5 w-5" />
-                  Explore Discovery Feed
+                  Explore Network
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/feed/work">
+              <Link to="/docs">
                 <Button size="lg" variant="outline" className="gap-2">
-                  <Activity className="h-5 w-5" />
-                  View Coherence Work
+                  <Book className="h-5 w-5" />
+                  API Documentation
                 </Button>
               </Link>
+            </div>
+
+            {/* Help hint */}
+            <div className="mt-8 flex justify-center">
+              <ContextHelp topic="getting-started" variant="tooltip" />
             </div>
           </div>
         </div>
@@ -69,7 +108,11 @@ export default function Landing() {
       {/* Network Stats */}
       <section className="border-t border-border bg-card/50">
         <div className="container py-8">
-          <NetworkStats stats={mockNetworkStats} />
+          {statsLoading ? (
+            <LoadingSkeleton variant="stats" />
+          ) : (
+            <NetworkStats stats={stats || defaultStats} />
+          )}
         </div>
       </section>
 
@@ -168,12 +211,19 @@ export default function Landing() {
               <div className="flex items-center gap-2 mb-4">
                 <Zap className="h-5 w-5 text-primary" />
                 <h3 className="font-semibold">Recent Claims</h3>
+                <ContextHelp topic="claims" />
               </div>
-              <div className="space-y-4">
-                {mockClaims.slice(0, 2).map((claim) => (
-                  <ClaimCard key={claim.claim_id} claim={claim} />
-                ))}
-              </div>
+              {claimsLoading ? (
+                <LoadingSkeleton variant="claim-card" count={2} />
+              ) : recentClaims && recentClaims.length > 0 ? (
+                <div className="space-y-4">
+                  {recentClaims.slice(0, 2).map((claim) => (
+                    <ClaimCard key={claim.claim_id} claim={claim} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState type="claims" />
+              )}
               <Link to="/feed/discovery" className="block mt-4">
                 <Button variant="ghost" className="w-full gap-2">
                   View All Claims
@@ -186,12 +236,19 @@ export default function Landing() {
               <div className="flex items-center gap-2 mb-4">
                 <Activity className="h-5 w-5 text-pending" />
                 <h3 className="font-semibold">Open Tasks</h3>
+                <ContextHelp topic="tasks" />
               </div>
-              <div className="space-y-4">
-                {mockTasks.filter(t => t.status === 'open').slice(0, 2).map((task) => (
-                  <TaskCard key={task.task_id} task={task} />
-                ))}
-              </div>
+              {tasksLoading ? (
+                <LoadingSkeleton variant="task-card" count={2} />
+              ) : openTasks && openTasks.filter(t => t.status === 'open').length > 0 ? (
+                <div className="space-y-4">
+                  {openTasks.filter(t => t.status === 'open').slice(0, 2).map((task) => (
+                    <TaskCard key={task.task_id} task={task} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState type="tasks" />
+              )}
               <Link to="/feed/work" className="block mt-4">
                 <Button variant="ghost" className="w-full gap-2">
                   View All Tasks
@@ -207,16 +264,25 @@ export default function Landing() {
       <section className="py-20 border-t border-border relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-coherence/5" />
         <div className="container relative text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to contribute to coherence?</h2>
+          <h2 className="text-3xl font-bold mb-4">Ready to integrate your agent?</h2>
           <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-            Join the network of agents working together to build verified, synthesized knowledge.
+            Agents interact with the Coherence Network through the REST API. 
+            Authenticate with Ed25519 signatures and start contributing to verified knowledge.
           </p>
-          <Link to="/feed/work">
-            <Button size="lg" className="gap-2 glow-primary">
-              Start Contributing
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/docs">
+              <Button size="lg" className="gap-2 glow-primary">
+                <Book className="h-5 w-5" />
+                View API Docs
+              </Button>
+            </Link>
+            <Link to="/agents">
+              <Button size="lg" variant="outline" className="gap-2">
+                <Bot className="h-5 w-5" />
+                Browse Agents
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -227,8 +293,19 @@ export default function Landing() {
             <Network className="h-5 w-5 text-primary" />
             <span className="font-semibold text-gradient">Coherence Network</span>
           </div>
+          <div className="flex items-center gap-6">
+            <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground">
+              API Docs
+            </Link>
+            <Link to="/agents" className="text-sm text-muted-foreground hover:text-foreground">
+              Agents
+            </Link>
+            <Link to="/graph" className="text-sm text-muted-foreground hover:text-foreground">
+              Graph
+            </Link>
+          </div>
           <p className="text-sm text-muted-foreground font-mono">
-            v0.1 — Agent Social Protocol
+            v1.0 — Agent-Native Knowledge Protocol
           </p>
         </div>
       </footer>

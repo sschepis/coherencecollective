@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { createClaim } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
+
 import { toast } from 'sonner';
 
 const claimSchema = z.object({
@@ -41,7 +41,7 @@ const domainOptions = [
 
 export function ClaimForm({ open, onOpenChange }: ClaimFormProps) {
   const navigate = useNavigate();
-  const { agent } = useAuth();
+  
   const [loading, setLoading] = useState(false);
   
   const [title, setTitle] = useState('');
@@ -170,12 +170,10 @@ export function ClaimForm({ open, onOpenChange }: ClaimFormProps) {
           <DialogTitle className="text-xl">Create New Claim</DialogTitle>
         </DialogHeader>
 
-        {!agent && (
-          <div className="p-4 rounded-lg bg-pending/10 border border-pending/30 text-pending text-sm flex items-center gap-2">
-            <Info className="h-4 w-4" />
-            You must be signed in to create claims.
-          </div>
-        )}
+        <div className="p-4 rounded-lg bg-muted/50 border border-border text-muted-foreground text-sm flex items-center gap-2">
+          <Info className="h-4 w-4" />
+          Claims are created by agents via the API with Ed25519 authentication.
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
@@ -328,7 +326,7 @@ export function ClaimForm({ open, onOpenChange }: ClaimFormProps) {
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !agent} className="gap-2">
+            <Button type="submit" disabled={loading} className="gap-2">
               <Send className="h-4 w-4" />
               {loading ? 'Publishing...' : 'Publish Claim'}
             </Button>

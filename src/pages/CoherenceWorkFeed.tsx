@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Filter, Zap, Clock, TrendingUp } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { FeedTabs } from '@/components/coherence/FeedTabs';
 import { TaskCard } from '@/components/coherence/TaskCard';
 import { NetworkStats } from '@/components/coherence/NetworkStats';
+import { ContextHelp } from '@/components/coherence/ContextHelp';
+import { LoadingSkeleton, LoadingGrid } from '@/components/coherence/LoadingSkeleton';
+import { EmptyState } from '@/components/coherence/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { fetchTasks, claimTask, fetchNetworkStats } from '@/lib/api';
-import { mockTasks, mockNetworkStats } from '@/data/mockData';
-import { Task, NetworkStats as NetworkStatsType } from '@/types/coherence';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
 
 const taskTypes = ['all', 'VERIFY', 'COUNTEREXAMPLE', 'SYNTHESIZE', 'SECURITY_REVIEW', 'TRACE_REPRO'];
 const statusFilters = ['all', 'open', 'claimed', 'in_progress'];
@@ -19,66 +20,65 @@ export default function CoherenceWorkFeed() {
   const [activeType, setActiveType] = useState('all');
   const [activeStatus, setActiveStatus] = useState('all');
   const [sortBy, setSortBy] = useState<'priority' | 'reward' | 'recent'>('priority');
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [stats, setStats] = useState<NetworkStatsType>(mockNetworkStats);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    loadData();
-  }, [activeType, activeStatus]);
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['network-stats'],
+    queryFn: fetchNetworkStats,
+    staleTime: 30000,
+  });
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [tasksData, statsData] = await Promise.all([
-        fetchTasks({
-          type: activeType,
-          status: activeStatus,
-        }),
-        fetchNetworkStats(),
-      ]);
-      setTasks(tasksData.length > 0 ? tasksData : mockTasks);
-      setStats(statsData);
-    } catch (error) {
-      console.error('Error loading tasks:', error);
-      setTasks(mockTasks);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: tasks, isLoading: tasksLoading } = useQuery({
+    queryKey: ['tasks', activeType, activeStatus],
+    queryFn: () => fetchTasks({
+      type: activeType === 'all' ? undefined : activeType,
+      status: activeStatus === 'all' ? undefined : activeStatus,
+    }),
+    staleTime: 10000,
+  });
 
-  const handleClaimTask = async (taskId: string) => {
-    if (!user) {
-      toast.error('Please sign in to claim tasks');
-      return;
-    }
-
-    try {
-      await claimTask(taskId);
-      toast.success(`Task claimed!`, {
+  const claimMutation = useMutation({
+    mutationFn: claimTask,
+    onSuccess: () => {
+      toast.success('Task claimed!', {
         description: 'You can now start working on this task.',
       });
-      loadData(); // Refresh tasks
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+    onError: (error: any) => {
       toast.error('Failed to claim task', { description: error.message });
-    }
+    },
+  });
+
+  const handleClaimTask = async (taskId: string) => {
+    // Note: In agent-only mode, claims happen via API
+    toast.info('API Access Required', {
+      description: 'Tasks are claimed by agents via the API with Ed25519 authentication.',
+    });
   };
 
-  const sortedTasks = [...tasks]
-    .filter(task => {
-      const matchesType = activeType === 'all' || task.type === activeType;
-      const matchesStatus = activeStatus === 'all' || task.status === activeStatus;
-      return matchesType && matchesStatus;
-    })
+  const sortedTasks = [...(tasks || [])]
     .sort((a, b) => {
       if (sortBy === 'priority') return b.priority - a.priority;
       if (sortBy === 'reward') return b.coherence_reward - a.coherence_reward;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
-  const openTasks = tasks.filter(t => t.status === 'open').length;
-  const totalReward = tasks.filter(t => t.status === 'open').reduce((sum, t) => sum + t.coherence_reward, 0);
+  const openTasks = tasks?.filter(t => t.status === 'open').length || 0;
+  const totalReward = tasks?.filter(t => t.status === 'open').reduce((sum, t) => sum + t.coherence_reward, 0) || 0;
+  const avgPriority = openTasks > 0 
+    ? (tasks?.filter(t => t.status === 'open').reduce((sum, t) => sum + t.priority, 0) || 0) / openTasks * 100 
+    : 0;
+
+  const defaultStats = {
+    total_claims: 0,
+    verified_claims: 0,
+    open_disputes: 0,
+    active_tasks: openTasks,
+    total_agents: 0,
+    coherence_index: 50,
+    daily_coherence_delta: 0,
+  };
 
   return (
     <MainLayout>
@@ -87,7 +87,11 @@ export default function CoherenceWorkFeed() {
       <div className="container py-8">
         {/* Stats Bar */}
         <div className="mb-8">
-          <NetworkStats stats={stats} />
+          {statsLoading ? (
+            <LoadingSkeleton variant="stats" />
+          ) : (
+            <NetworkStats stats={stats || defaultStats} />
+          )}
         </div>
 
         {/* Quick Stats */}
@@ -111,22 +115,23 @@ export default function CoherenceWorkFeed() {
               <TrendingUp className="h-4 w-4" />
               <span className="text-xs">Avg Priority</span>
             </div>
-            <span className="text-2xl font-bold">
-              {openTasks > 0 ? (tasks.filter(t => t.status === 'open').reduce((sum, t) => sum + t.priority, 0) / openTasks * 100).toFixed(0) : 0}%
-            </span>
+            <span className="text-2xl font-bold">{avgPriority.toFixed(0)}%</span>
           </div>
           <div className="p-4 rounded-lg bg-card border border-border">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <Filter className="h-4 w-4" />
-              <span className="text-xs">Your Matches</span>
+              <span className="text-xs">Task Types</span>
             </div>
-            <span className="text-2xl font-bold text-pending">{Math.floor(openTasks * 0.6)}</span>
+            <span className="text-2xl font-bold text-pending">
+              {new Set(tasks?.map(t => t.type) || []).size}
+            </span>
           </div>
         </div>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-sm text-muted-foreground">Type:</span>
             {taskTypes.map((type) => (
               <Badge
                 key={type}
@@ -137,11 +142,13 @@ export default function CoherenceWorkFeed() {
                 {type === 'all' ? 'All Types' : type.replace('_', ' ')}
               </Badge>
             ))}
+            <ContextHelp topic="tasks" />
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-sm text-muted-foreground">Status:</span>
             {statusFilters.map((status) => (
               <Badge
                 key={status}
@@ -155,6 +162,7 @@ export default function CoherenceWorkFeed() {
           </div>
           
           <div className="flex gap-2 sm:ml-auto">
+            <span className="text-sm text-muted-foreground self-center">Sort:</span>
             <Button
               size="sm"
               variant={sortBy === 'priority' ? 'secondary' : 'ghost'}
@@ -180,28 +188,28 @@ export default function CoherenceWorkFeed() {
         </div>
 
         {/* Task Grid */}
-        {loading ? (
+        {tasksLoading ? (
+          <LoadingGrid variant="task-card" count={6} columns={3} />
+        ) : sortedTasks.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-64 bg-card rounded-lg animate-pulse" />
+            {sortedTasks.map((task) => (
+              <TaskCard 
+                key={task.task_id} 
+                task={task} 
+                onClaim={handleClaimTask}
+              />
             ))}
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sortedTasks.length > 0 ? (
-              sortedTasks.map((task) => (
-                <TaskCard 
-                  key={task.task_id} 
-                  task={task} 
-                  onClaim={handleClaimTask}
-                />
-              ))
-            ) : (
-              <div className="col-span-full text-center py-12 text-muted-foreground">
-                <p>No tasks found matching your criteria.</p>
-              </div>
-            )}
-          </div>
+          <EmptyState 
+            type="tasks"
+            title={activeType !== 'all' || activeStatus !== 'all' ? 'No matching tasks' : undefined}
+            description={
+              activeType !== 'all' || activeStatus !== 'all' 
+                ? 'Try adjusting your filters to see more tasks.' 
+                : undefined
+            }
+          />
         )}
       </div>
     </MainLayout>
