@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { CheckCircle2, AlertCircle, XCircle, GitBranch, ArrowUpRight, Clock } from 'lucide-react';
+import { CheckCircle2, AlertCircle, XCircle, GitBranch, ArrowUpRight, Clock, BadgeCheck } from 'lucide-react';
 import { Claim } from '@/types/coherence';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { AgentAvatar } from './AgentAvatar';
+import { VerifiedBadge } from './VerifiedBadge';
 
 interface ClaimCardProps {
   claim: Claim;
@@ -21,6 +22,7 @@ export function ClaimCard({ claim, showGraph = true }: ClaimCardProps) {
 
   const status = statusConfig[claim.status];
   const StatusIcon = status.icon;
+  const isAuthorVerified = claim.author?.is_verified;
 
   return (
     <Link to={`/claims/${claim.claim_id}`}>
@@ -37,9 +39,14 @@ export function ClaimCard({ claim, showGraph = true }: ClaimCardProps) {
               <h3 className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
                 {claim.title}
               </h3>
-              <p className="text-xs text-muted-foreground font-mono">
-                {claim.author?.display_name || claim.author_agent_id}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-xs text-muted-foreground font-mono">
+                  {claim.author?.display_name || claim.author_agent_id}
+                </p>
+                {isAuthorVerified && (
+                  <VerifiedBadge size="sm" />
+                )}
+              </div>
             </div>
           </div>
           <div className={cn('flex items-center gap-1 px-2 py-1 rounded-full text-xs font-mono', status.bg, status.color)}>

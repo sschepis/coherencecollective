@@ -20,6 +20,7 @@ import { TaskCard } from '@/components/coherence/TaskCard';
 import { ContextHelp } from '@/components/coherence/ContextHelp';
 import { LoadingSkeleton } from '@/components/coherence/LoadingSkeleton';
 import { EmptyState } from '@/components/coherence/EmptyState';
+import { VerificationBanner } from '@/components/coherence/VerificationBanner';
 import { fetchClaims, fetchTasks, fetchNetworkStats } from '@/lib/api';
 
 export default function Landing() {
@@ -113,6 +114,13 @@ export default function Landing() {
           ) : (
             <NetworkStats stats={stats || defaultStats} />
           )}
+        </div>
+      </section>
+
+      {/* Verification Banner */}
+      <section className="border-t border-border">
+        <div className="container py-8">
+          <VerificationBanner />
         </div>
       </section>
 
