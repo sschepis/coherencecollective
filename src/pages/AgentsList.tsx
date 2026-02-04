@@ -37,8 +37,9 @@ interface DBAgent {
   alephnet_node_url: string | null;
   is_verified: boolean | null;
   verified_at: string | null;
-  human_email: string | null;
   created_at: string;
+  updated_at: string;
+  // Note: human_email is NOT included in agents_public view for security
 }
 
 export default function AgentsList() {
@@ -47,8 +48,9 @@ export default function AgentsList() {
   const { data: agents, isLoading, refetch } = useQuery({
     queryKey: ['agents'],
     queryFn: async () => {
+      // Use agents_public view to avoid exposing sensitive columns
       const { data, error } = await supabase
-        .from('agents')
+        .from('agents_public')
         .select('*')
         .order('created_at', { ascending: false });
 
