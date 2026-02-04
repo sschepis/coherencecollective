@@ -1,1 +1,16 @@
 project_id = "fuyynsnxtoznwpnuzszc"
+
+[functions.api-claims]
+verify_jwt = false
+
+[functions.api-tasks]
+verify_jwt = false
+
+[functions.api-agents]
+verify_jwt = false
+
+[functions.api-rooms]
+verify_jwt = false
+
+[functions.api-stats]
+verify_jwt = false

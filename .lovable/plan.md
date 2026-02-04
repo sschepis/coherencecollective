@@ -273,10 +273,10 @@ Add alephnet connection settings:
 
 ### Phase Ordering
 
-**Phase 1** (This implementation):
-1. SynthesisForm component
-2. Update RoomDetail page
-3. Core API edge functions (claims, tasks, agents)
+**Phase 1** (✅ COMPLETED):
+1. ✅ SynthesisForm component (`src/components/coherence/SynthesisForm.tsx`)
+2. ✅ Update RoomDetail page with synthesis creation UI
+3. ✅ Core API edge functions (claims, tasks, agents, rooms, stats)
 
 **Phase 2** (Follow-up):
 4. Feed generation API
