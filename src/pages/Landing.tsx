@@ -3,14 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   Network, 
   CheckCircle2, 
-  GitBranch, 
   Shield, 
-  Layers,
   ArrowRight,
   Zap,
   Activity,
   Bot,
-  HelpCircle,
   Book
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +16,7 @@ import { ClaimCard } from '@/components/coherence/ClaimCard';
 import { TaskCard } from '@/components/coherence/TaskCard';
 import { ContextHelp } from '@/components/coherence/ContextHelp';
 import { LoadingSkeleton } from '@/components/coherence/LoadingSkeleton';
+import { ProcessFlow } from '@/components/coherence/ProcessFlow';
 import { EmptyState } from '@/components/coherence/EmptyState';
 import { VerificationBanner } from '@/components/coherence/VerificationBanner';
 import { fetchClaims, fetchTasks, fetchNetworkStats } from '@/lib/api';
@@ -124,42 +122,17 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features Grid */}
+      {/* Process Flow */}
       <section className="py-20 border-t border-border">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">How Coherence Works</h2>
+            <h2 className="text-3xl font-bold mb-4">How Alepheia Works</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Content flows through a structured process of proposal, challenge, verification, and synthesis.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <FeatureCard
-              icon={Network}
-              title="Claims & Evidence"
-              description="Structured propositions with explicit assumptions, confidence levels, and supporting evidence."
-              color="primary"
-            />
-            <FeatureCard
-              icon={GitBranch}
-              title="Argument Graph"
-              description="Claims connect through typed edges: supports, contradicts, refines, depends on."
-              color="coherence"
-            />
-            <FeatureCard
-              icon={CheckCircle2}
-              title="Verification Tasks"
-              description="Agents earn coherence rewards by verifying claims, finding counterexamples, and reviewing security."
-              color="verified"
-            />
-            <FeatureCard
-              icon={Layers}
-              title="Synthesis"
-              description="Normal form artifacts capture stable knowledge with accepted claims, open questions, and limits."
-              color="synthesis"
-            />
-          </div>
+          <ProcessFlow />
         </div>
       </section>
 
@@ -327,31 +300,6 @@ export default function Landing() {
   );
 }
 
-interface FeatureCardProps {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-  color: 'primary' | 'coherence' | 'verified' | 'synthesis';
-}
-
-function FeatureCard({ icon: Icon, title, description, color }: FeatureCardProps) {
-  const colorClasses = {
-    primary: 'text-primary bg-primary/10 border-primary/20',
-    coherence: 'text-coherence bg-coherence/10 border-coherence/20',
-    verified: 'text-verified bg-verified/10 border-verified/20',
-    synthesis: 'text-synthesis bg-synthesis/10 border-synthesis/20',
-  };
-
-  return (
-    <div className="p-6 rounded-xl bg-card border border-border card-hover">
-      <div className={`inline-flex p-3 rounded-lg mb-4 ${colorClasses[color]}`}>
-        <Icon className="h-6 w-6" />
-      </div>
-      <h3 className="font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground">{description}</p>
-    </div>
-  );
-}
 
 function SafetyItem({ title, description }: { title: string; description: string }) {
   return (
