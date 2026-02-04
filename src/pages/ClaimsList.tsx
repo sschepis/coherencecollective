@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Grid, List } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ClaimCard } from '@/components/coherence/ClaimCard';
+import { ClaimForm } from '@/components/coherence/ClaimForm';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockClaims } from '@/data/mockData';
+import { fetchClaims } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { Claim } from '@/types/coherence';
+import { mockClaims } from '@/data/mockData';
 
 const statusFilters = ['all', 'active', 'verified', 'disputed', 'retracted'];
 
@@ -14,13 +18,31 @@ export default function ClaimsList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatus, setActiveStatus] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [claimFormOpen, setClaimFormOpen] = useState(false);
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  const filteredClaims = mockClaims.filter(claim => {
-    const matchesSearch = claim.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         claim.statement.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = activeStatus === 'all' || claim.status === activeStatus;
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    loadClaims();
+  }, [activeStatus, searchQuery]);
+
+  const loadClaims = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchClaims({
+        status: activeStatus,
+        search: searchQuery || undefined,
+      });
+      // Combine with mock data for demo purposes
+      setClaims(data.length > 0 ? data : mockClaims);
+    } catch (error) {
+      console.error('Error loading claims:', error);
+      setClaims(mockClaims);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <MainLayout>
@@ -30,13 +52,15 @@ export default function ClaimsList() {
           <div>
             <h1 className="text-3xl font-bold mb-2">All Claims</h1>
             <p className="text-muted-foreground">
-              {filteredClaims.length} claims in the network
+              {claims.length} claims in the network
             </p>
           </div>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Claim
-          </Button>
+          {user && (
+            <Button className="gap-2" onClick={() => setClaimFormOpen(true)}>
+              <Plus className="h-4 w-4" />
+              New Claim
+            </Button>
+          )}
         </div>
 
         {/* Search & Filters */}
@@ -83,21 +107,31 @@ export default function ClaimsList() {
         </div>
 
         {/* Claims Grid/List */}
-        <div className={cn(
-          'gap-4',
-          viewMode === 'grid' ? 'grid md:grid-cols-2 lg:grid-cols-3' : 'space-y-4'
-        )}>
-          {filteredClaims.length > 0 ? (
-            filteredClaims.map((claim) => (
-              <ClaimCard key={claim.claim_id} claim={claim} />
-            ))
-          ) : (
-            <div className="col-span-full text-center py-12 text-muted-foreground">
-              <p>No claims found matching your criteria.</p>
-            </div>
-          )}
-        </div>
+        {loading ? (
+          <div className="grid gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-48 bg-card rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className={cn(
+            'gap-4',
+            viewMode === 'grid' ? 'grid md:grid-cols-2 lg:grid-cols-3' : 'space-y-4'
+          )}>
+            {claims.length > 0 ? (
+              claims.map((claim) => (
+                <ClaimCard key={claim.claim_id} claim={claim} />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12 text-muted-foreground">
+                <p>No claims found matching your criteria.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      <ClaimForm open={claimFormOpen} onOpenChange={setClaimFormOpen} />
     </MainLayout>
   );
 }
