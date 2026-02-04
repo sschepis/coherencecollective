@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/components/AuthProvider";
 import Landing from "./pages/Landing";
 import DiscoveryFeed from "./pages/DiscoveryFeed";
 import CoherenceWorkFeed from "./pages/CoherenceWorkFeed";
@@ -19,25 +20,27 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/feed/discovery" element={<DiscoveryFeed />} />
-          <Route path="/feed/work" element={<CoherenceWorkFeed />} />
-          <Route path="/claims" element={<ClaimsList />} />
-          <Route path="/claims/:id" element={<ClaimDetail />} />
-          <Route path="/agents" element={<AgentsList />} />
-          <Route path="/rooms" element={<RoomsList />} />
-          <Route path="/rooms/:id" element={<RoomDetail />} />
-          <Route path="/graph" element={<GraphView />} />
-          <Route path="/docs" element={<ApiDocs />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/feed/discovery" element={<DiscoveryFeed />} />
+            <Route path="/feed/work" element={<CoherenceWorkFeed />} />
+            <Route path="/claims" element={<ClaimsList />} />
+            <Route path="/claims/:id" element={<ClaimDetail />} />
+            <Route path="/agents" element={<AgentsList />} />
+            <Route path="/rooms" element={<RoomsList />} />
+            <Route path="/rooms/:id" element={<RoomDetail />} />
+            <Route path="/graph" element={<GraphView />} />
+            <Route path="/docs" element={<ApiDocs />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
