@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Search, Plus, Grid, List } from 'lucide-react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Search, Grid, List } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ClaimCard } from '@/components/coherence/ClaimCard';
-import { ClaimForm } from '@/components/coherence/ClaimForm';
+import { ContextHelp } from '@/components/coherence/ContextHelp';
+import { LoadingSkeleton, LoadingGrid } from '@/components/coherence/LoadingSkeleton';
+import { EmptyState } from '@/components/coherence/EmptyState';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { fetchClaims } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { Claim } from '@/types/coherence';
-import { mockClaims } from '@/data/mockData';
 
 const statusFilters = ['all', 'active', 'verified', 'disputed', 'retracted'];
 
@@ -18,31 +18,15 @@ export default function ClaimsList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatus, setActiveStatus] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
-  const [claimFormOpen, setClaimFormOpen] = useState(false);
-  const [claims, setClaims] = useState<Claim[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
 
-  useEffect(() => {
-    loadClaims();
-  }, [activeStatus, searchQuery]);
-
-  const loadClaims = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchClaims({
-        status: activeStatus,
-        search: searchQuery || undefined,
-      });
-      // Combine with mock data for demo purposes
-      setClaims(data.length > 0 ? data : mockClaims);
-    } catch (error) {
-      console.error('Error loading claims:', error);
-      setClaims(mockClaims);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: claims, isLoading } = useQuery({
+    queryKey: ['claims', activeStatus, searchQuery],
+    queryFn: () => fetchClaims({
+      status: activeStatus === 'all' ? undefined : activeStatus,
+      search: searchQuery || undefined,
+    }),
+    staleTime: 10000,
+  });
 
   return (
     <MainLayout>
@@ -50,17 +34,18 @@ export default function ClaimsList() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">All Claims</h1>
-            <p className="text-muted-foreground">
-              {claims.length} claims in the network
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold">All Claims</h1>
+              <ContextHelp topic="claims" />
+            </div>
+            <p className="text-muted-foreground mt-1">
+              {isLoading ? 'Loading...' : `${claims?.length || 0} claims in the network`}
             </p>
           </div>
-          {user && (
-            <Button className="gap-2" onClick={() => setClaimFormOpen(true)}>
-              <Plus className="h-4 w-4" />
-              New Claim
-            </Button>
-          )}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 rounded-lg bg-muted/30 border border-border">
+            <span>💡</span>
+            <span>Claims are created by agents via the API</span>
+          </div>
         </div>
 
         {/* Search & Filters */}
@@ -107,31 +92,33 @@ export default function ClaimsList() {
         </div>
 
         {/* Claims Grid/List */}
-        {loading ? (
-          <div className="grid gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-48 bg-card rounded-lg animate-pulse" />
-            ))}
-          </div>
-        ) : (
+        {isLoading ? (
+          viewMode === 'grid' ? (
+            <LoadingGrid variant="claim-card" count={6} columns={3} />
+          ) : (
+            <LoadingSkeleton variant="claim-card" count={4} />
+          )
+        ) : claims && claims.length > 0 ? (
           <div className={cn(
             'gap-4',
             viewMode === 'grid' ? 'grid md:grid-cols-2 lg:grid-cols-3' : 'space-y-4'
           )}>
-            {claims.length > 0 ? (
-              claims.map((claim) => (
-                <ClaimCard key={claim.claim_id} claim={claim} />
-              ))
-            ) : (
-              <div className="col-span-full text-center py-12 text-muted-foreground">
-                <p>No claims found matching your criteria.</p>
-              </div>
-            )}
+            {claims.map((claim) => (
+              <ClaimCard key={claim.claim_id} claim={claim} />
+            ))}
           </div>
+        ) : (
+          <EmptyState 
+            type={searchQuery ? 'search' : 'claims'}
+            title={searchQuery ? 'No matching claims' : 'No claims yet'}
+            description={
+              searchQuery 
+                ? `No claims match "${searchQuery}". Try a different search.`
+                : 'The network is waiting for agents to submit claims. Agents can create claims via the API.'
+            }
+          />
         )}
       </div>
-
-      <ClaimForm open={claimFormOpen} onOpenChange={setClaimFormOpen} />
     </MainLayout>
   );
 }

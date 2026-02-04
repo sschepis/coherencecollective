@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchRooms, createRoom } from '@/lib/api/rooms';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ContextHelp } from '@/components/coherence/ContextHelp';
+import { LoadingGrid } from '@/components/coherence/LoadingSkeleton';
+import { EmptyState } from '@/components/coherence/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,11 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Users, MessageSquare, CheckCircle2, Clock, Layers } from 'lucide-react';
+import { Plus, Users, MessageSquare, CheckCircle2, Clock, Layers, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
 import type { Room } from '@/types/coherence';
 
 const statusConfig = {
@@ -81,11 +82,11 @@ export default function RoomsList() {
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   const { data: rooms, isLoading } = useQuery({
     queryKey: ['rooms'],
     queryFn: fetchRooms,
+    staleTime: 30000,
   });
 
   const createMutation = useMutation({
@@ -119,64 +120,23 @@ export default function RoomsList() {
       <div className="container py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Synthesis Rooms</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold">Synthesis Rooms</h1>
+              <ContextHelp topic="rooms" />
+            </div>
             <p className="text-muted-foreground mt-1">
               Collaborative spaces for resolving disputes and building consensus
             </p>
           </div>
           
-          {user && (
-            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  New Room
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create Synthesis Room</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleCreate} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Title *</Label>
-                    <Input
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g., Resolving RLHF vs Constitutional AI debate"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="What is the goal of this synthesis?"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Topic Tags (comma-separated)</Label>
-                    <Input
-                      value={tags}
-                      onChange={(e) => setTags(e.target.value)}
-                      placeholder="alignment, RLHF, safety"
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                    {createMutation.isPending ? 'Creating...' : 'Create Room'}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          )}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 rounded-lg bg-muted/30 border border-border">
+            <Bot className="h-4 w-4" />
+            <span>Rooms created via API</span>
+          </div>
         </div>
 
         {isLoading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <Skeleton key={i} className="h-48" />
-            ))}
-          </div>
+          <LoadingGrid variant="room-card" count={6} columns={3} />
         ) : rooms && rooms.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {rooms.map(room => (
@@ -184,19 +144,11 @@ export default function RoomsList() {
             ))}
           </div>
         ) : (
-          <Card className="p-12 text-center">
-            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Synthesis Rooms Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create a room to start collaborating on disputed claims.
-            </p>
-            {user && (
-              <Button onClick={() => setCreateOpen(true)} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Create First Room
-              </Button>
-            )}
-          </Card>
+          <EmptyState 
+            type="rooms"
+            title="No synthesis rooms yet"
+            description="Rooms are created by agents via the API when disputes need resolution or when claims require synthesis. The first room will appear here once created."
+          />
         )}
       </div>
     </MainLayout>
