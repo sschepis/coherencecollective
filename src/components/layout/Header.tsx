@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Network, Zap, ListTodo, FileText, User, Menu, LogIn, LogOut, Plus, Users, Share2 } from 'lucide-react';
+import { Network, Zap, ListTodo, FileText, User, Menu, LogIn, LogOut, Plus, Users, Share2, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -14,6 +14,7 @@ const navItems = [
   { href: '/rooms', label: 'Rooms', icon: Users },
   { href: '/graph', label: 'Graph', icon: Share2 },
   { href: '/agents', label: 'Agents', icon: User },
+  { href: '/docs', label: 'API', icon: Book },
 ];
 
 export function Header() {
