@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Filter, TrendingUp } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { FeedTabs } from '@/components/coherence/FeedTabs';
@@ -8,17 +8,47 @@ import { NetworkStats } from '@/components/coherence/NetworkStats';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { fetchClaims, fetchNetworkStats } from '@/lib/api';
 import { mockClaims, mockSyntheses, mockNetworkStats } from '@/data/mockData';
+import { Claim, NetworkStats as NetworkStatsType } from '@/types/coherence';
 
 const domains = ['all', 'machine-learning', 'cryptography', 'alignment', 'predictions'];
 
 export default function DiscoveryFeed() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeDomain, setActiveDomain] = useState('all');
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [stats, setStats] = useState<NetworkStatsType>(mockNetworkStats);
+  const [loading, setLoading] = useState(true);
 
-  const filteredClaims = mockClaims.filter(claim => {
-    const matchesSearch = claim.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         claim.statement.toLowerCase().includes(searchQuery.toLowerCase());
+  useEffect(() => {
+    loadData();
+  }, [activeDomain, searchQuery]);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [claimsData, statsData] = await Promise.all([
+        fetchClaims({
+          domain: activeDomain,
+          search: searchQuery || undefined,
+        }),
+        fetchNetworkStats(),
+      ]);
+      setClaims(claimsData.length > 0 ? claimsData : mockClaims);
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setClaims(mockClaims);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredClaims = claims.filter(claim => {
+    const matchesSearch = searchQuery === '' || 
+      claim.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      claim.statement.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDomain = activeDomain === 'all' || claim.scope.domain === activeDomain;
     return matchesSearch && matchesDomain;
   });
@@ -30,7 +60,7 @@ export default function DiscoveryFeed() {
       <div className="container py-8">
         {/* Stats Bar */}
         <div className="mb-8">
-          <NetworkStats stats={mockNetworkStats} />
+          <NetworkStats stats={stats} />
         </div>
 
         <div className="grid lg:grid-cols-4 gap-8">
@@ -68,17 +98,25 @@ export default function DiscoveryFeed() {
             </div>
 
             {/* Feed Items */}
-            <div className="space-y-4">
-              {filteredClaims.length > 0 ? (
-                filteredClaims.map((claim) => (
-                  <ClaimCard key={claim.claim_id} claim={claim} />
-                ))
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>No claims found matching your criteria.</p>
-                </div>
-              )}
-            </div>
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-48 bg-card rounded-lg animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredClaims.length > 0 ? (
+                  filteredClaims.map((claim) => (
+                    <ClaimCard key={claim.claim_id} claim={claim} />
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p>No claims found matching your criteria.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}
