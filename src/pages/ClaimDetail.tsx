@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { 
   ArrowLeft, 
   CheckCircle2, 
@@ -8,18 +9,63 @@ import {
   ExternalLink,
   Shield,
   FileText,
-  MessageSquare
+  MessageSquare,
+  Loader2
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AgentAvatar } from '@/components/coherence/AgentAvatar';
-import { mockClaims, mockEdges } from '@/data/mockData';
+import { EdgeForm } from '@/components/coherence/EdgeForm';
+import { fetchClaimById } from '@/lib/api';
+import { fetchEdgesForClaim } from '@/lib/api/edges';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+
+const statusConfig = {
+  verified: { icon: CheckCircle2, color: 'text-verified bg-verified/10 border-verified/30' },
+  active: { icon: Clock, color: 'text-primary bg-primary/10 border-primary/30' },
+  disputed: { icon: AlertCircle, color: 'text-pending bg-pending/10 border-pending/30' },
+  retracted: { icon: AlertCircle, color: 'text-contradiction bg-contradiction/10 border-contradiction/30' },
+  superseded: { icon: GitBranch, color: 'text-muted-foreground bg-muted border-muted' },
+};
 
 export default function ClaimDetail() {
   const { id } = useParams();
-  const claim = mockClaims.find(c => c.claim_id === id);
+  const { user } = useAuth();
+
+  const { data: claim, isLoading: claimLoading } = useQuery({
+    queryKey: ['claim', id],
+    queryFn: () => fetchClaimById(id!),
+    enabled: !!id,
+  });
+
+  const { data: relatedEdges = [], refetch: refetchEdges } = useQuery({
+    queryKey: ['edges', id],
+    queryFn: () => fetchEdgesForClaim(id!),
+    enabled: !!id,
+  });
+
+  if (claimLoading) {
+    return (
+      <MainLayout>
+        <div className="container py-8">
+          <Skeleton className="h-8 w-48 mb-6" />
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              <Skeleton className="h-64" />
+              <Skeleton className="h-48" />
+            </div>
+            <div className="space-y-6">
+              <Skeleton className="h-48" />
+              <Skeleton className="h-32" />
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!claim) {
     return (
@@ -33,18 +79,6 @@ export default function ClaimDetail() {
       </MainLayout>
     );
   }
-
-  const relatedEdges = mockEdges.filter(
-    e => e.from_claim_id === claim.claim_id || e.to_claim_id === claim.claim_id
-  );
-
-  const statusConfig = {
-    verified: { icon: CheckCircle2, color: 'text-verified bg-verified/10 border-verified/30' },
-    active: { icon: Clock, color: 'text-primary bg-primary/10 border-primary/30' },
-    disputed: { icon: AlertCircle, color: 'text-pending bg-pending/10 border-pending/30' },
-    retracted: { icon: AlertCircle, color: 'text-contradiction bg-contradiction/10 border-contradiction/30' },
-    superseded: { icon: GitBranch, color: 'text-muted-foreground bg-muted border-muted' },
-  };
 
   const status = statusConfig[claim.status];
   const StatusIcon = status.icon;
@@ -162,9 +196,7 @@ export default function ClaimDetail() {
                 <div className="space-y-3">
                   {relatedEdges.map((edge) => {
                     const isOutgoing = edge.from_claim_id === claim.claim_id;
-                    const linkedClaim = mockClaims.find(c => 
-                      c.claim_id === (isOutgoing ? edge.to_claim_id : edge.from_claim_id)
-                    );
+                    const linkedClaim = isOutgoing ? edge.to_claim : edge.from_claim;
                     
                     const edgeColors = {
                       SUPPORTS: 'border-verified/30 bg-verified/5',
@@ -209,19 +241,18 @@ export default function ClaimDetail() {
           <div className="space-y-6">
             {/* Actions */}
             <div className="p-4 rounded-xl bg-card border border-border space-y-3">
+              {user && (
+                <EdgeForm 
+                  fromClaimId={claim.claim_id} 
+                  fromClaimTitle={claim.title}
+                  onSuccess={() => refetchEdges()}
+                />
+              )}
               <Button className="w-full gap-2">
                 <CheckCircle2 className="h-4 w-4" />
                 Verify Claim
               </Button>
               <Button variant="outline" className="w-full gap-2">
-                <AlertCircle className="h-4 w-4" />
-                Add Contradiction
-              </Button>
-              <Button variant="outline" className="w-full gap-2">
-                <GitBranch className="h-4 w-4" />
-                Refine Claim
-              </Button>
-              <Button variant="ghost" className="w-full gap-2">
                 <MessageSquare className="h-4 w-4" />
                 Start Discussion
               </Button>
