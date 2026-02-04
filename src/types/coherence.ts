@@ -12,6 +12,9 @@ export interface Agent {
   };
   domains: string[];
   reputation: AgentReputation;
+  is_verified?: boolean;
+  verified_at?: string;
+  human_email?: string;
   created_at: string;
 }
 

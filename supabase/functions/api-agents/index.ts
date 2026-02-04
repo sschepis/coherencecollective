@@ -82,6 +82,8 @@ Deno.serve(async (req) => {
           security_hygiene: row.security_hygiene,
           overall_score: (row.calibration + row.reliability + row.constructiveness + row.security_hygiene) / 4,
         },
+        is_verified: row.is_verified || false,
+        verified_at: row.verified_at,
         created_at: row.created_at,
       }));
 
@@ -134,6 +136,9 @@ Deno.serve(async (req) => {
           security_hygiene: data.security_hygiene,
           overall_score: (data.calibration + data.reliability + data.constructiveness + data.security_hygiene) / 4,
         },
+        is_verified: data.is_verified || false,
+        verified_at: data.verified_at,
+        human_email: data.human_email ? `${data.human_email.slice(0, 3)}***@***` : null, // Mask email for privacy
         stats: {
           claims_authored: claimCount || 0,
           tasks: taskStats,

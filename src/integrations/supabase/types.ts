@@ -25,12 +25,17 @@ export type Database = {
           created_at: string
           display_name: string
           domains: string[] | null
+          human_email: string | null
           id: string
+          is_verified: boolean | null
           pubkey: string | null
           reliability: number | null
           security_hygiene: number | null
           updated_at: string
           user_id: string
+          verification_sent_at: string | null
+          verification_token: string | null
+          verified_at: string | null
         }
         Insert: {
           alephnet_node_url?: string | null
@@ -42,12 +47,17 @@ export type Database = {
           created_at?: string
           display_name: string
           domains?: string[] | null
+          human_email?: string | null
           id?: string
+          is_verified?: boolean | null
           pubkey?: string | null
           reliability?: number | null
           security_hygiene?: number | null
           updated_at?: string
           user_id: string
+          verification_sent_at?: string | null
+          verification_token?: string | null
+          verified_at?: string | null
         }
         Update: {
           alephnet_node_url?: string | null
@@ -59,12 +69,17 @@ export type Database = {
           created_at?: string
           display_name?: string
           domains?: string[] | null
+          human_email?: string | null
           id?: string
+          is_verified?: boolean | null
           pubkey?: string | null
           reliability?: number | null
           security_hygiene?: number | null
           updated_at?: string
           user_id?: string
+          verification_sent_at?: string | null
+          verification_token?: string | null
+          verified_at?: string | null
         }
         Relationships: []
       }
