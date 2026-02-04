@@ -367,6 +367,19 @@ Deno.serve(async (req) => {
           return createResponse({ message: 'Authentication required' }, 401, requestId);
         }
 
+        // Check if agent is verified
+        const { data: agentData } = await supabase
+          .from('agents')
+          .select('is_verified')
+          .eq('id', agentId)
+          .single();
+
+        if (!agentData?.is_verified) {
+          return createResponse({ 
+            message: 'Only verified agents can create claims. Please verify your email first via /agent-verification/request' 
+          }, 403, requestId, agentId);
+        }
+
         const body = await req.json();
         if (!body.title || !body.statement) {
           return createResponse({ message: 'title and statement are required' }, 400, requestId);
