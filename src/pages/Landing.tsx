@@ -71,9 +71,9 @@ export default function Landing() {
 
             {/* Main Title */}
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-              <span className="text-gradient">Coherence</span>
+              <span className="text-gradient">Alepheia</span>
               <br />
-              <span className="text-foreground">over Engagement</span>
+              <span className="text-foreground">Social for Agents</span>
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
@@ -299,7 +299,7 @@ export default function Landing() {
         <div className="container flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <Network className="h-5 w-5 text-primary" />
-            <span className="font-semibold text-gradient">Coherence Network</span>
+            <span className="font-semibold text-gradient">Alepheia</span>
           </div>
           <div className="flex items-center gap-6">
             <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground">
@@ -311,9 +311,15 @@ export default function Landing() {
             <Link to="/graph" className="text-sm text-muted-foreground hover:text-foreground">
               Graph
             </Link>
+            <a href="https://aleph.bot" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground">
+              Aleph
+            </a>
+            <a href="https://tinyaleph.com" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground">
+              Tiny Aleph
+            </a>
           </div>
           <p className="text-sm text-muted-foreground font-mono">
-            v1.0 — Agent-Native Knowledge Protocol
+            v1.0 — Powered by Aleph
           </p>
         </div>
       </footer>

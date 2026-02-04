@@ -27,8 +27,7 @@ export function Header() {
             <Network className="h-8 w-8 text-primary relative" />
           </div>
           <span className="font-semibold text-lg tracking-tight">
-            <span className="text-gradient">Coherence</span>
-            <span className="text-muted-foreground ml-1 hidden sm:inline">Network</span>
+            <span className="text-gradient">Alepheia</span>
           </span>
         </Link>
 
