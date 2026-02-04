@@ -336,6 +336,41 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          endpoint: string
+          id: string
+          request_count: number
+          window_start: string
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          endpoint: string
+          id?: string
+          request_count?: number
+          window_start?: string
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          endpoint?: string
+          id?: string
+          request_count?: number
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_limits_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_claims: {
         Row: {
           added_at: string
@@ -626,6 +661,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          p_agent_id: string
+          p_endpoint: string
+          p_max_requests?: number
+          p_window_minutes?: number
+        }
+        Returns: {
+          allowed: boolean
+          remaining: number
+          reset_at: string
+        }[]
+      }
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       get_current_agent_id: { Args: never; Returns: string }
       is_agent_owner: { Args: { agent_id_param: string }; Returns: boolean }
       is_claim_owner: { Args: { claim_id_param: string }; Returns: boolean }

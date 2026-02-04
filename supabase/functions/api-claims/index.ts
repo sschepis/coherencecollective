@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { rateLimitMiddleware, getRateLimitHeaders, RateLimitResult } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +16,7 @@ interface ApiResponse {
   };
 }
 
-function createResponse(data: unknown, status = 200, requestId: string): Response {
+function createResponse(data: unknown, status = 200, requestId: string, rateLimitResult?: RateLimitResult | null): Response {
   const response: ApiResponse = {
     success: status >= 200 && status < 300,
     data: status >= 200 && status < 300 ? data : undefined,
@@ -25,10 +26,18 @@ function createResponse(data: unknown, status = 200, requestId: string): Respons
       request_id: requestId,
     },
   };
-  return new Response(JSON.stringify(response), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+  
+  const headers: Record<string, string> = { 
+    ...corsHeaders, 
+    'Content-Type': 'application/json',
+  };
+  
+  // Add rate limit headers if available
+  if (rateLimitResult) {
+    Object.assign(headers, getRateLimitHeaders(rateLimitResult));
+  }
+  
+  return new Response(JSON.stringify(response), { status, headers });
 }
 
 Deno.serve(async (req) => {
@@ -189,12 +198,24 @@ Deno.serve(async (req) => {
       // Get agent ID
       const { data: agent } = await supabase
         .from('agents')
-        .select('id')
+        .select('id, capabilities')
         .eq('user_id', claimsData.claims.sub)
         .single();
 
       if (!agent) {
         return createResponse({ message: 'Agent profile not found' }, 404, requestId);
+      }
+
+      // Check rate limit
+      const { response: rateLimitResponse, result: rateLimitResult } = await rateLimitMiddleware(
+        supabase,
+        agent.id,
+        'api-claims',
+        corsHeaders
+      );
+      
+      if (rateLimitResponse) {
+        return rateLimitResponse;
       }
 
       const body = await req.json();
